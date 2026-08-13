@@ -148,8 +148,9 @@ export async function replayArtifact(
   const session = await launchSession();
   registerDialogHandler(session.page, runDir, logger);
   initSessionState(runDir, runId, session.cdpUrl);
-  const outputs: Record<string, unknown> = {};
+ const outputs: Record<string, unknown> = {};
   let stepsExecuted = 0;
+  let lastStep: Step | undefined;
 
   try {
     allowlist.assertDomainAllowed(artifact.target.baseUrl);
@@ -157,6 +158,7 @@ export async function replayArtifact(
 
     for (const step of [...artifact.steps].sort((a, b) => a.index - b.index)) {
       stepsExecuted += 1;
+      lastStep = step;
       logger.event("step_started", { stepId: step.id, index: step.index, action: step.action, description: step.description });
 
       allowlist.assertActionAllowed(step.action);
@@ -325,16 +327,28 @@ export async function replayArtifact(
       updateSessionState(runDir, { status: "completed" });
       return finish("business_outcome", { outcome: { code: err.code, description: err.description }, outputs }, runId, artifact, startedAt, stepsExecuted, humanEscalations);
     }
-    const screenshotPath = logger.screenshotPath("failure");
+const screenshotPath = logger.screenshotPath("failure");
     await session.page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => {});
+    // Best-effort: grab the text of whichever frame the failing step (or the
+    // artifact's checkpoint, if we never got into the loop) actually targeted,
+    // so a failure's evidence shows what the page said, not just its URL —
+    // this is what let us diagnose an intermittent failure without needing
+    // to look at the screenshot directly.
+    const debugFrame = lastStep?.target?.frame ?? artifact.checkpoint.frame;
+    const frameText = await resolveFrame(session.page, debugFrame)
+      .locator("body")
+      .textContent({ timeout: 1000 })
+      .then((t) => t?.replace(/\s+/g, " ").trim().slice(0, 500))
+      .catch(() => undefined);
+    const evidence = { screenshot: screenshotPath, url: session.page.url(), ...(frameText ? { frameText } : {}) };
     const failure =
       err instanceof HardFailure
-        ? { kind: err.kind, expected: err.expected, observed: err.observed, evidence: { screenshot: screenshotPath, url: session.page.url() } }
+        ? { kind: err.kind, expected: err.expected, observed: err.observed, evidence }
         : err instanceof AllowlistViolation
-        ? { kind: "guardrail_block" as FailureKind, expected: "action within allowlist", observed: err.message, evidence: { screenshot: screenshotPath, url: session.page.url() } }
+        ? { kind: "guardrail_block" as FailureKind, expected: "action within allowlist", observed: err.message, evidence }
         : err instanceof EscalationTimeoutError
-        ? { kind: "escalation_timed_out" as FailureKind, expected: "a human operator to resume within the escalation timeout", observed: err.message, evidence: { screenshot: screenshotPath, url: session.page.url() } }
-        : { kind: "unexpected_state" as FailureKind, expected: "no error", observed: err instanceof Error ? err.message : String(err), evidence: { screenshot: screenshotPath, url: session.page.url() } };
+        ? { kind: "escalation_timed_out" as FailureKind, expected: "a human operator to resume within the escalation timeout", observed: err.message, evidence }
+        : { kind: "unexpected_state" as FailureKind, expected: "no error", observed: err instanceof Error ? err.message : String(err), evidence };
     logger.event("replay_failed", failure);
     updateSessionState(runDir, { status: "failed" });
     return finish("failure", { failure }, runId, artifact, startedAt, stepsExecuted, humanEscalations);

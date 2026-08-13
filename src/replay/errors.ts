@@ -21,7 +21,7 @@ export interface ReplayFailure {
   stepIndex?: number;
   expected: string;
   observed: string;
-  evidence?: { screenshot?: string; url?: string };
+  evidence?: { screenshot?: string; url?: string; frameText?: string };
 }
 
 export interface ReplayBusinessOutcome {
