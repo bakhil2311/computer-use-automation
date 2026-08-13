@@ -1,5 +1,6 @@
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
 import net from "node:net";
+import fs from "node:fs";
 
 /**
  * Owns the actual browser process for a run. We launch a normal Chromium
@@ -33,16 +34,31 @@ async function findFreePort(): Promise<number> {
   });
 }
 
+/**
+ * Some environments (e.g. the sandbox this project was originally built in)
+ * pre-install a Chromium build outside Playwright's own managed cache, at a
+ * revision the `playwright` npm package doesn't expect, so we pin an
+ * explicit executable there instead of letting Playwright resolve its own.
+ * On a normal machine (e.g. after `npx playwright install chromium`), no
+ * such override exists or is needed — we let Playwright find its own
+ * bundled build. `PLAYWRIGHT_CHROMIUM_PATH` lets anyone opt into an explicit
+ * path if they have one.
+ */
+const SANDBOX_CHROMIUM_PATH = "/opt/pw-browsers/chromium";
+
+function resolveExecutablePath(): string | undefined {
+  if (process.env.PLAYWRIGHT_CHROMIUM_PATH) return process.env.PLAYWRIGHT_CHROMIUM_PATH;
+  if (fs.existsSync(SANDBOX_CHROMIUM_PATH)) return SANDBOX_CHROMIUM_PATH;
+  return undefined; // let Playwright resolve its own managed browser
+}
+
 export async function launchSession(): Promise<LaunchedSession> {
-  // The sandbox's pre-installed Chromium revision can trail the `playwright`
-  // npm package's expected revision; pin the executable explicitly instead
-  // of letting Playwright resolve (and try to download) its bundled build.
-  const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH ?? "/opt/pw-browsers/chromium";
+  const executablePath = resolveExecutablePath();
   const port = await findFreePort();
 
   const browser = await chromium.launch({
     headless: true,
-    executablePath,
+    ...(executablePath ? { executablePath } : {}),
     args: [`--remote-debugging-port=${port}`],
   });
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
