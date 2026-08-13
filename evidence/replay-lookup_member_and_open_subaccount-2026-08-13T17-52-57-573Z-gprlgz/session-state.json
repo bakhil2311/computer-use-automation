@@ -1,0 +1,31 @@
+{
+  "runId": "replay-lookup_member_and_open_subaccount-2026-08-13T17-52-57-573Z-gprlgz",
+  "cdpUrl": "http://127.0.0.1:44675",
+  "owner": "automation",
+  "status": "completed",
+  "humanActions": [
+    {
+      "ts": "2026-08-13T17:53:18.587Z",
+      "action": "click",
+      "detail": {
+        "action": "click",
+        "target": "Open Sub-Account button",
+        "ok": true,
+        "urlAfter": "http://localhost:4178/dashboard"
+      }
+    }
+  ],
+  "updatedAt": "2026-08-13T17:53:19.585Z",
+  "escalation": {
+    "reason": "Step \"Open a new sub-account for this member\" is irreversible and requires human approval before it can run unattended.",
+    "code": "IRREVERSIBLE_STEP_REQUIRES_APPROVAL",
+    "observedUrl": "http://localhost:4178/dashboard",
+    "screenshot": "evidence/replay-lookup_member_and_open_subaccount-2026-08-13T17-52-57-573Z-gprlgz/screenshots/1786643578460_escalation.png",
+    "requestedAt": "2026-08-13T17:52:58.516Z",
+    "stepId": "step-5-988573",
+    "stepIndex": 4,
+    "capability": "lookup_member_and_open_subaccount"
+  },
+  "resumedAt": "2026-08-13T17:53:18.589Z",
+  "resumeNote": "Reviewed escalation context and member 10234's account history; approved opening the sub-account and accepted the confirm dialog myself."
+}

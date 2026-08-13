@@ -1,0 +1,16 @@
+{
+  "domains": ["localhost"],
+  "routes": [
+    "/login",
+    "/dashboard",
+    "/member/search",
+    "/member/:id/detail",
+    "/member/:id/subaccount",
+    "/logout"
+  ],
+  "actionTypes": ["navigate", "click", "type", "select", "waitFor", "extract", "keypress", "assertCheckpoint"],
+  "riskyRoutes": [
+    { "method": "POST", "routePattern": "/member/:id/subaccount", "risk": "irreversible" }
+  ],
+  "notes": "Scoped to the local mock target app used for this take-home. In production this file (or its equivalent config store) would be per-tenant and centrally managed; see REPORT.md section 6."
+}

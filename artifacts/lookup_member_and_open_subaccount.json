@@ -1,0 +1,382 @@
+{
+  "artifactId": "d1c68570-6416-418f-8add-7721cd130cd8",
+  "schemaVersion": "1.0.0",
+  "name": "lookup_member_and_open_subaccount",
+  "version": 1,
+  "description": "Looks up a credit union member by ID, reads their current savings balance, then opens a new sub-account for them and reaches the confirmation screen.",
+  "createdAt": "2026-08-13T17:48:27.947Z",
+  "updatedAt": "2026-08-13T17:48:27.947Z",
+  "target": {
+    "vendorProduct": "cu-servicing-console",
+    "appId": "member-servicing",
+    "baseUrl": "http://localhost:4178",
+    "surface": "legacy-web",
+    "environment": "sandbox"
+  },
+  "allowlist": {
+    "domains": [
+      "localhost"
+    ],
+    "routes": [
+      "/login",
+      "/dashboard",
+      "/member/search",
+      "/member/:id/detail",
+      "/member/:id/subaccount",
+      "/logout"
+    ],
+    "actionTypes": [
+      "navigate",
+      "click",
+      "type",
+      "select",
+      "waitFor",
+      "extract",
+      "keypress",
+      "assertCheckpoint"
+    ]
+  },
+  "riskLevel": "irreversible",
+  "approvalState": "draft",
+  "params": [
+    {
+      "name": "memberId",
+      "type": "string",
+      "required": true,
+      "description": "The credit union member ID to look up (5-digit numeric id in this app).",
+      "example": "10234",
+      "sensitive": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "savingsBalance",
+      "type": "string",
+      "required": true,
+      "description": "The member's current Savings account balance as displayed, e.g. $4582.10.",
+      "sensitive": false
+    },
+    {
+      "name": "subAccountNumber",
+      "type": "string",
+      "required": true,
+      "description": "The newly created sub-account's confirmation/account number, e.g. SUB-10234-1002.",
+      "sensitive": false
+    }
+  ],
+  "checkpoint": {
+    "description": "A confirmation banner shows the new sub-account was opened successfully for this member.",
+    "textPattern": "was opened successfully",
+    "frame": [
+      "#ctl00_mainFrame"
+    ]
+  },
+  "steps": [
+    {
+      "id": "step-1-da79b1",
+      "index": 0,
+      "description": "Enter the member ID to search for",
+      "action": "type",
+      "target": {
+        "description": "Member ID field",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "label",
+            "priority": 0,
+            "name": "Member ID",
+            "rationale": "real <label for> association exists on this form"
+          },
+          {
+            "kind": "css",
+            "priority": 1,
+            "value": "#ctl00_srch_txtId",
+            "rationale": "fallback to legacy generated id"
+          }
+        ]
+      },
+      "value": {
+        "paramRef": "memberId"
+      },
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "timeoutMs": 10000,
+      "retry": {
+        "max": 2,
+        "backoffMs": 500
+      },
+      "outcomes": []
+    },
+    {
+      "id": "step-2-3afad1",
+      "index": 1,
+      "description": "Submit the member search",
+      "action": "click",
+      "target": {
+        "description": "Search button",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "role",
+            "priority": 0,
+            "role": "button",
+            "name": "Search",
+            "rationale": "accessible role/name is stable"
+          },
+          {
+            "kind": "css",
+            "priority": 1,
+            "value": "#ctl00_srch_btnGo",
+            "rationale": "fallback to legacy generated id"
+          }
+        ]
+      },
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "timeoutMs": 10000,
+      "retry": {
+        "max": 2,
+        "backoffMs": 500
+      },
+      "outcomes": [
+        {
+          "id": "step-2-3afad1-outcome-0",
+          "match": {
+            "locator": {
+              "description": "View link for the found member",
+              "strategies": [
+                {
+                  "kind": "role",
+                  "priority": 0,
+                  "role": "link",
+                  "name": "View",
+                  "rationale": "generic accessible role/name, independent of which member id was searched"
+                }
+              ]
+            },
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          },
+          "classification": "success",
+          "code": "MEMBER_FOUND",
+          "description": "A matching member was found; a View link is present to open their detail record."
+        },
+        {
+          "id": "step-2-3afad1-outcome-1",
+          "match": {
+            "textPattern": "No records found",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          },
+          "classification": "business_outcome",
+          "code": "MEMBER_NOT_FOUND",
+          "description": "No member exists with the given ID. This is a legitimate answer, not an error.",
+          "populatesOutputs": [
+            "savingsBalance"
+          ]
+        },
+        {
+          "id": "step-2-3afad1-outcome-2",
+          "match": {
+            "textPattern": "Access denied",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          },
+          "classification": "business_outcome",
+          "code": "ACCESS_DENIED",
+          "description": "The member record exists but requires elevated permissions this operator/capability does not have."
+        },
+        {
+          "id": "step-2-3afad1-outcome-3",
+          "match": {
+            "textPattern": "Invalid Member ID format",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          },
+          "classification": "business_outcome",
+          "code": "INVALID_MEMBER_ID",
+          "description": "The supplied member id was not a valid 5-digit id."
+        },
+        {
+          "id": "step-2-3afad1-outcome-4",
+          "match": {
+            "textPattern": "Temporary system error",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          },
+          "classification": "recoverable",
+          "code": "TRANSIENT_SEARCH_ERROR",
+          "description": "A transient backend error occurred during search; safe to retry the same search once.",
+          "recoveryAction": "reload"
+        }
+      ]
+    },
+    {
+      "id": "step-3-88e8fc",
+      "index": 2,
+      "description": "Open the found member's detail record",
+      "action": "click",
+      "target": {
+        "description": "View link",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "role",
+            "priority": 0,
+            "role": "link",
+            "name": "View",
+            "rationale": "generic accessible role/name"
+          }
+        ]
+      },
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "timeoutMs": 10000,
+      "retry": {
+        "max": 2,
+        "backoffMs": 500
+      },
+      "outcomes": []
+    },
+    {
+      "id": "step-4-adcce3",
+      "index": 3,
+      "description": "Read the member's current savings balance",
+      "action": "extract",
+      "target": {
+        "description": "Savings balance cell",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "css",
+            "priority": 0,
+            "value": "tr:has-text(\"Savings\") td:last-child",
+            "rationale": "row selected by its own label text, balance is the last column of that row"
+          },
+          {
+            "kind": "xpath",
+            "priority": 1,
+            "value": "//tr[td[1][normalize-space()=\"Savings\"]]/td[3]",
+            "rationale": "structural fallback keyed to the same Savings label"
+          }
+        ]
+      },
+      "extractAs": "savingsBalance",
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "timeoutMs": 10000,
+      "retry": {
+        "max": 2,
+        "backoffMs": 500
+      },
+      "outcomes": []
+    },
+    {
+      "id": "step-5-988573",
+      "index": 4,
+      "description": "Open a new sub-account for this member",
+      "action": "click",
+      "target": {
+        "description": "Open Sub-Account button",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "role",
+            "priority": 0,
+            "role": "button",
+            "name": "Open Sub-Account",
+            "rationale": "stable accessible role/name"
+          },
+          {
+            "kind": "css",
+            "priority": 1,
+            "value": "#ctl00_det_btnOpenSub",
+            "rationale": "fallback to legacy generated id"
+          }
+        ]
+      },
+      "risk": "irreversible",
+      "requiresConfirmation": true,
+      "dialogPolicy": "accept",
+      "timeoutMs": 10000,
+      "retry": {
+        "max": 2,
+        "backoffMs": 500
+      },
+      "outcomes": [
+        {
+          "id": "step-5-988573-outcome-0",
+          "match": {
+            "textPattern": "was opened successfully",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          },
+          "classification": "success",
+          "code": "SUBACCOUNT_OPENED",
+          "description": "The sub-account was created and a confirmation message with the new sub-account number is displayed."
+        }
+      ]
+    },
+    {
+      "id": "step-6-19df6a",
+      "index": 5,
+      "description": "Read the new sub-account's confirmation number",
+      "action": "extract",
+      "target": {
+        "description": "Confirmation number",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "css",
+            "priority": 0,
+            "value": "#ctl00_conf_num",
+            "rationale": "stable generated id for this confirmation element within the current app version"
+          },
+          {
+            "kind": "xpath",
+            "priority": 1,
+            "value": "//p[contains(., \"Confirmation #:\")]/span",
+            "rationale": "structural fallback anchored to the adjacent label text"
+          }
+        ]
+      },
+      "extractAs": "subAccountNumber",
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "timeoutMs": 10000,
+      "retry": {
+        "max": 2,
+        "backoffMs": 500
+      },
+      "outcomes": []
+    }
+  ],
+  "provenance": {
+    "discoveryRunId": "discover-2026-08-13T17-44-38-995Z-ou723h",
+    "recordedBy": "llm-discovery",
+    "model": "claude-sonnet-5 (interactive discovery, this session)"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "computer-use-automation",
+  "version": "1.0.0",
+  "description": "Computer-use agent that discovers a UI flow with an LLM, records it as a reusable artifact, and replays it deterministically without the model in the loop.",
+  "type": "module",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "target-app": "tsx target-app/server.ts",
+    "agent:run": "tsx src/cli/index.ts run",
+    "agent:replay": "tsx src/cli/index.ts replay",
+    "driver": "tsx src/cli/index.ts driver",
+    "operator": "tsx src/cli/index.ts operator",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
+    "body-parser": "^2.3.0",
+    "commander": "^15.0.0",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "playwright": "^1.62.1",
+    "uuid": "^14.0.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.19.0",
+    "@types/node": "^26.2.0",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

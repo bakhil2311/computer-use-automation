@@ -1,0 +1,359 @@
+{
+  "discoveryRunId": "discover-2026-08-13T17-44-38-995Z-ou723h",
+  "goal": "Look up a member by ID, read their savings balance, then open a new sub-account for them and reach the confirmation screen.",
+  "target": {
+    "vendorProduct": "cu-servicing-console",
+    "appId": "member-servicing",
+    "baseUrl": "http://localhost:4178",
+    "surface": "legacy-web"
+  },
+  "model": "claude-sonnet-5 (interactive discovery, this session)",
+  "entries": [
+    {
+      "id": "step-1-da79b1",
+      "action": "type",
+      "description": "Enter the member ID to search for",
+      "rationale": "The search form has a proper <label for> association ('Member ID'), so role/label targeting should survive markup changes better than the legacy generated id; keeping the id as a fallback.",
+      "target": {
+        "description": "Member ID field",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "label",
+            "priority": 0,
+            "name": "Member ID",
+            "rationale": "real <label for> association exists on this form"
+          },
+          {
+            "kind": "css",
+            "priority": 1,
+            "value": "#ctl00_srch_txtId",
+            "rationale": "fallback to legacy generated id"
+          }
+        ]
+      },
+      "value": {
+        "paramRef": "memberId"
+      },
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "observationBefore": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643101647_before.png"
+      },
+      "observationAfter": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643101805_after.png"
+      },
+      "outcomes": []
+    },
+    {
+      "id": "step-2-3afad1",
+      "action": "click",
+      "description": "Submit the member search",
+      "rationale": "Real <button> with visible text 'Search'; role/name locator is independent of the legacy generated id.",
+      "target": {
+        "description": "Search button",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "role",
+            "priority": 0,
+            "role": "button",
+            "name": "Search",
+            "rationale": "accessible role/name is stable"
+          },
+          {
+            "kind": "css",
+            "priority": 1,
+            "value": "#ctl00_srch_btnGo",
+            "rationale": "fallback to legacy generated id"
+          }
+        ]
+      },
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "observationBefore": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643103354_before.png"
+      },
+      "observationAfter": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643103589_after.png"
+      },
+      "outcomes": [
+        {
+          "classification": "success",
+          "code": "MEMBER_FOUND",
+          "description": "A matching member was found; a View link is present to open their detail record.",
+          "match": {
+            "locator": {
+              "description": "View link for the found member",
+              "strategies": [
+                {
+                  "kind": "role",
+                  "priority": 0,
+                  "role": "link",
+                  "name": "View",
+                  "rationale": "generic accessible role/name, independent of which member id was searched"
+                }
+              ]
+            },
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          }
+        },
+        {
+          "classification": "business_outcome",
+          "code": "MEMBER_NOT_FOUND",
+          "description": "No member exists with the given ID. This is a legitimate answer, not an error.",
+          "match": {
+            "textPattern": "No records found",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          },
+          "populatesOutputs": [
+            "savingsBalance"
+          ]
+        },
+        {
+          "classification": "business_outcome",
+          "code": "ACCESS_DENIED",
+          "description": "The member record exists but requires elevated permissions this operator/capability does not have.",
+          "match": {
+            "textPattern": "Access denied",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          }
+        },
+        {
+          "classification": "business_outcome",
+          "code": "INVALID_MEMBER_ID",
+          "description": "The supplied member id was not a valid 5-digit id.",
+          "match": {
+            "textPattern": "Invalid Member ID format",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          }
+        },
+        {
+          "classification": "recoverable",
+          "code": "TRANSIENT_SEARCH_ERROR",
+          "description": "A transient backend error occurred during search; safe to retry the same search once.",
+          "match": {
+            "textPattern": "Temporary system error",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          },
+          "recoveryAction": "retry"
+        }
+      ]
+    },
+    {
+      "id": "step-3-88e8fc",
+      "action": "click",
+      "description": "Open the found member's detail record",
+      "rationale": "The View link's accessible role+name is generic and independent of which member was searched.",
+      "target": {
+        "description": "View link",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "role",
+            "priority": 0,
+            "role": "link",
+            "name": "View",
+            "rationale": "generic accessible role/name"
+          }
+        ]
+      },
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "observationBefore": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643126332_before.png"
+      },
+      "observationAfter": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643126601_after.png"
+      },
+      "outcomes": []
+    },
+    {
+      "id": "step-4-adcce3",
+      "action": "extract",
+      "description": "Read the member's current savings balance",
+      "rationale": "The accounts table has no test ids; targeting the Savings row by its label text and taking the last cell (Balance column) is robust to unrelated column-width/style changes, with an xpath fallback keyed to the same label.",
+      "target": {
+        "description": "Savings balance cell",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "css",
+            "priority": 0,
+            "value": "tr:has-text(\"Savings\") td:last-child",
+            "rationale": "row selected by its own label text, balance is the last column of that row"
+          },
+          {
+            "kind": "xpath",
+            "priority": 1,
+            "value": "//tr[td[1][normalize-space()=\"Savings\"]]/td[3]",
+            "rationale": "structural fallback keyed to the same Savings label"
+          }
+        ]
+      },
+      "extractAs": "savingsBalance",
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "observationBefore": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643128244_before.png"
+      },
+      "observationAfter": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643128419_after.png"
+      },
+      "outcomes": []
+    },
+    {
+      "id": "step-5-988573",
+      "action": "click",
+      "description": "Open a new sub-account for this member",
+      "rationale": "This mutates member/account state and cannot be trivially undone, so it is classified irreversible and requires confirmation. The app also raises its own native confirm() dialog as a second guard; discovery is accepting that dialog now because approving the happy path is the explicit goal of this recording. Replay must not do this unattended without pre-approval.",
+      "target": {
+        "description": "Open Sub-Account button",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "role",
+            "priority": 0,
+            "role": "button",
+            "name": "Open Sub-Account",
+            "rationale": "stable accessible role/name"
+          },
+          {
+            "kind": "css",
+            "priority": 1,
+            "value": "#ctl00_det_btnOpenSub",
+            "rationale": "fallback to legacy generated id"
+          }
+        ]
+      },
+      "risk": "irreversible",
+      "requiresConfirmation": true,
+      "dialogPolicy": "accept",
+      "observationBefore": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643272957_before.png"
+      },
+      "observationAfter": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643273259_after.png"
+      },
+      "outcomes": [
+        {
+          "classification": "success",
+          "code": "SUBACCOUNT_OPENED",
+          "description": "The sub-account was created and a confirmation message with the new sub-account number is displayed.",
+          "match": {
+            "textPattern": "was opened successfully",
+            "frame": [
+              "#ctl00_mainFrame"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "step-6-19df6a",
+      "action": "extract",
+      "description": "Read the new sub-account's confirmation number",
+      "rationale": "The confirmation number span has a stable id within this app version; using it directly since there's no other semantic marker, with an xpath fallback anchored to the adjacent 'Confirmation #:' label text in case the id changes.",
+      "target": {
+        "description": "Confirmation number",
+        "frame": [
+          "#ctl00_mainFrame"
+        ],
+        "strategies": [
+          {
+            "kind": "css",
+            "priority": 0,
+            "value": "#ctl00_conf_num",
+            "rationale": "stable generated id for this confirmation element within the current app version"
+          },
+          {
+            "kind": "xpath",
+            "priority": 1,
+            "value": "//p[contains(., \"Confirmation #:\")]/span",
+            "rationale": "structural fallback anchored to the adjacent label text"
+          }
+        ]
+      },
+      "extractAs": "subAccountNumber",
+      "risk": "safe",
+      "requiresConfirmation": false,
+      "dialogPolicy": "none",
+      "observationBefore": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643294928_before.png"
+      },
+      "observationAfter": {
+        "url": "http://localhost:4178/dashboard",
+        "screenshot": "evidence/discover-2026-08-13T17-44-38-995Z-ou723h/screenshots/1786643295073_after.png"
+      },
+      "outcomes": []
+    }
+  ],
+  "params": [
+    {
+      "name": "memberId",
+      "type": "string",
+      "required": true,
+      "description": "The credit union member ID to look up (5-digit numeric id in this app).",
+      "example": "10234",
+      "sensitive": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "savingsBalance",
+      "type": "string",
+      "required": true,
+      "description": "The member's current Savings account balance as displayed, e.g. $4582.10.",
+      "sensitive": false
+    },
+    {
+      "name": "subAccountNumber",
+      "type": "string",
+      "required": true,
+      "description": "The newly created sub-account's confirmation/account number, e.g. SUB-10234-1002.",
+      "sensitive": false
+    }
+  ],
+  "checkpoint": {
+    "description": "A confirmation banner shows the new sub-account was opened successfully for this member.",
+    "textPattern": "was opened successfully",
+    "frame": [
+      "#ctl00_mainFrame"
+    ]
+  }
+}
