@@ -16,8 +16,6 @@ export async function matchOutcome(page: Page, matcher: MatchSpec, probeTimeoutM
 
   if (matcher.urlPattern) {
     try {
-      // Page has .url() directly; a FrameLocator doesn't, so read it off the
-      // frame's own <html> element instead (works the same for either).
       const url =
         "url" in ctx
           ? ctx.url()
@@ -32,24 +30,19 @@ export async function matchOutcome(page: Page, matcher: MatchSpec, probeTimeoutM
     }
   }
   if (matcher.textPattern) {
-    try {
+    const re = new RegExp(matcher.textPattern, "i");
+    const deadline = Date.now() + probeTimeoutMs;
+    while (Date.now() < deadline) {
       const body = await ctx
         .locator("body")
-        .textContent({ timeout: probeTimeoutMs })
+        .textContent({ timeout: Math.max(250, deadline - Date.now()) })
         .catch(() => null);
-      if (body) {
-        const re = new RegExp(matcher.textPattern, "i");
-        if (re.test(body)) return true;
-      }
-    } catch {
-      /* ignore */
+      if (body && re.test(body)) return true;
+      await new Promise((r) => setTimeout(r, 150));
     }
   }
   if (matcher.locator) {
     try {
-      // The outer `frame` is the source of truth for where this matcher
-      // applies; fall back to a frame already set on the locator itself
-      // (e.g. one authored standalone, outside an outcome/checkpoint).
       const locatorSpec = matcher.locator.frame ? matcher.locator : { ...matcher.locator, frame: matcher.frame };
       await resolveTarget(page, locatorSpec, { probeTimeoutMs });
       return true;
